@@ -20,7 +20,7 @@ import boardgame2 as bg2
 
 _ENV = gym.make('Reversi-v0')
 _ENV.reset()
-
+_MAX_DEPTH = 1
 
 def transition(board, player, action):
     """Return a new board if the action is valid, otherwise None."""
@@ -79,7 +79,7 @@ class ReversiAgent(abc.ABC):
         output_move_row = Value('d', -1)
         output_move_column = Value('d', 0)
         try:
-            # await self.search(board, valid_actions)    
+            # await self.search(board, valid_actions)
             p = Process(
                 target=self.search, 
                 args=(
@@ -159,8 +159,8 @@ class BestAgent(ReversiAgent):
 
     def search(self, color, board, valid_actions, output_move_row, output_move_column):
         # time.sleep(3)
-        move = self.minimax(board, 3, -np.inf, np.inf, self.player)
-
+        move = self.minimax(board, _MAX_DEPTH, -np.inf, np.inf, self.player)
+        print('fou', move)
         output_move_row.value = move[0]
         output_move_column.value = move[1]
 
@@ -199,33 +199,46 @@ class BestAgent(ReversiAgent):
 
         valids = _ENV.get_valid((state, self.player))
         valids = np.array(list(zip(*valids.nonzero())))
-
         if depth == 0:
-            return -1, self.evaluate(state) - depth
+            return [0, 0] ,-1, self.evaluate(state) - depth
 
         if player == self.player:
-            best_score = (-1, -np.inf)
+            best_score = -1, -np.inf
         else:
-            best_score = (-1, np.inf)
+            best_score = -1, np.inf
 
+
+        the_move = np.array([0, 0])
         for move in valids:
+
+
 
             board, turn = _ENV.get_next_state((state, player), move)
 
             val = self.minimax(board, depth - 1, alpha, beta, turn)
 
             if turn == self.player:
-                best_score = max(best_score, val, key=lambda i: i[1])
+
+                if best_score[1] > val[1]:
+                    best_score = val
+                    the_move = move
+
                 alpha = max(alpha, best_score[1])
                 if alpha >= beta:
-                    return move
+                    break
             else:
-                best_score = min(best_score, val, key=lambda i: i[1])
+                if best_score[1] < val[1]:
+                    best_score = val
+                    the_move = move
                 beta = min(beta, best_score[1])
-                if alpha >= beta:
-                    return move
 
-        return best_score
+                if alpha >= beta:
+                    break
+
+        if depth == _MAX_DEPTH:
+            return the_move
+        else:
+            return best_score
 
 
 
