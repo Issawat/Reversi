@@ -10,13 +10,10 @@ import asyncio
 import traceback
 import time
 from multiprocessing import Process, Value
-from math import inf
+
 import numpy as np
 import gym
-np.inf
 import boardgame2 as bg2
-
-
 
 _ENV = gym.make('Reversi-v0')
 _ENV.reset()
@@ -36,7 +33,7 @@ class ReversiAgent(abc.ABC):
     def __init__(self, color):
         """
         Create an agent.
-        
+
         Parameters
         -------------
         color : int
@@ -47,7 +44,7 @@ class ReversiAgent(abc.ABC):
         super().__init__()
         self._move = None
         self._color = color
-    
+
     @property
     def player(self):
         """Return the color of this agent."""
@@ -61,7 +58,7 @@ class ReversiAgent(abc.ABC):
     @property
     def best_move(self):
         """Return move after the thinking.
-        
+
         Returns
         ------------
         move : np.array
@@ -81,9 +78,9 @@ class ReversiAgent(abc.ABC):
         try:
             # await self.search(board, valid_actions)    
             p = Process(
-                target=self.search, 
+                target=self.search,
                 args=(
-                    self._color, board, valid_actions, 
+                    self._color, board, valid_actions,
                     output_move_row, output_move_column))
             p.start()
             while p.is_alive():
@@ -103,11 +100,11 @@ class ReversiAgent(abc.ABC):
 
     @abc.abstractmethod
     def search(
-            self, color, board, valid_actions, 
+            self, color, board, valid_actions,
             output_move_row, output_move_column):
         """
         Set the intended move to self._move.
-        
+
         The intended move is a np.array([r, c]) where r is the row index
         and c is the column index on the board. [r, c] must be one of the
         valid_actions, otherwise the game will skip your turn.
@@ -132,9 +129,9 @@ class ReversiAgent(abc.ABC):
 
 class RandomAgent(ReversiAgent):
     """An agent that move randomly."""
-    
+
     def search(
-            self, color, board, valid_actions, 
+            self, color, board, valid_actions,
             output_move_row, output_move_column):
         """Set the intended move to the value of output_moves."""
         # If you want to "simulate a move", you can call the following function:
@@ -145,7 +142,7 @@ class RandomAgent(ReversiAgent):
         try:
             # while True:
             #     pass
-            # time.sleep()
+            time.sleep(3)
             randidx = random.randint(0, len(valid_actions) - 1)
             random_action = valid_actions[randidx]
             output_move_row.value = random_action[0]
@@ -155,77 +152,54 @@ class RandomAgent(ReversiAgent):
             print('search() Traceback (most recent call last): ')
             traceback.print_tb(e.__traceback__)
 
+
 class BestAgent(ReversiAgent):
 
     def search(self, color, board, valid_actions, output_move_row, output_move_column):
-        # time.sleep(3)
-        move = self.minimax(board, 3, -np.inf, np.inf, self.player)
+        new_board = board
+        player = self.player
 
-        output_move_row.value = move[0]
-        output_move_column.value = move[1]
+        master_node = Node(board, player)
+        parent_node = master_node
+        count = 0
 
+        while count < 3:
+            count += 1
 
+            for move in valid_actions:
+                expand = transition(new_board, player, move)
+                child_node = Node(new_board, player, parent_node)
+                parent_node.add(child_node)
 
+        player = -1 * player
+        child = []
+        count = 0
 
-    def evaluate(self, state):
-        # print('test',state)
-        score = 0
-        occur = 0
+        print(tree)
 
-        for i in range(len(state)):
-            for j in range(len(state[i])):
-                if state[i][j] == -1:
-                    # simple case
-                    score += 1
-
-                    # corner case
-                    if (0,0) == (i,j) or (0,7) == (i,j) or (i,j) or (7,0) == (i,j) or (7,7) == (i,j):
-                        score += 10
-                    elif (0,2) == (i,j) or (0, 5) == (i,j) or (5,0) == (i,j) or (5,5) == (i,j):
-                        score += 5
-                elif state[i][j] == 1:
-                    # simple case
-                    score -= 1
-
-                    # corner case
-                    if (0,0) == (i,j) or (0,7) == (i,j) or (i,j) or (7,0) == (i,j) or (7,7) == (i,j):
-                        score -= 10
-                    elif (0, 2) == (i, j) or (0, 5) == (i, j) or (5, 0) == (i, j) or (5, 5) == (i, j):
-                        score -= 5
-
-        return score
-
-    def minimax(self, state,  depth, alpha, beta, player):
-
-        valids = _ENV.get_valid((state, self.player))
-        valids = np.array(list(zip(*valids.nonzero())))
-
-        if depth == 0:
-            return -1, self.evaluate(state) - depth
-
-        if player == self.player:
-            best_score = (-1, -np.inf)
-        else:
-            best_score = (-1, np.inf)
-
-        for move in valids:
-
-            board, turn = _ENV.get_next_state((state, player), move)
-
-            val = self.minimax(board, depth - 1, alpha, beta, turn)
-
-            if turn == self.player:
-                best_score = max(best_score, val, key=lambda i: i[1])
-                alpha = max(alpha, best_score[1])
-                if alpha >= beta:
-                    return move
-            else:
-                best_score = min(best_score, val, key=lambda i: i[1])
-                beta = min(beta, best_score[1])
-                if alpha >= beta:
-                    return move
-
-        return best_score
+    def miniMax(self, alpha, beta):
+        # This function should return selected node
+        raise NotImplementedError('You will have to implement this.')
 
 
+class Node():
 
+    def __init__(self, state, player, parent=None, score=0):
+        self.player = player
+        self.state = state
+        self.children = []
+        self.parent = parent
+        self.score = 0
+
+    def add(self, child_node):
+        self.children.append(child_node)
+
+    def min(self, a, b):
+        return None
+
+    def max(self, a, b):
+        return None
+
+    def evaluation(player, board):
+        # This function shuold return score for each nodes
+        raise NotImplementedError('You will have to implement this.')
