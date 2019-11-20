@@ -4,6 +4,7 @@ This module contains agents that play reversi.
 Version 3.0
 """
 
+import boardgame2 as bg2
 import abc
 import random
 import asyncio
@@ -14,13 +15,11 @@ from math import inf
 import numpy as np
 import gym
 np.inf
-import boardgame2 as bg2
-
 
 
 _ENV = gym.make('Reversi-v0')
 _ENV.reset()
-_MAX_DEPTH = 1
+_MAX_DEPTH = 4
 
 def transition(board, player, action):
     """Return a new board if the action is valid, otherwise None."""
@@ -36,7 +35,7 @@ class ReversiAgent(abc.ABC):
     def __init__(self, color):
         """
         Create an agent.
-        
+
         Parameters
         -------------
         color : int
@@ -47,7 +46,7 @@ class ReversiAgent(abc.ABC):
         super().__init__()
         self._move = None
         self._color = color
-    
+
     @property
     def player(self):
         """Return the color of this agent."""
@@ -61,7 +60,7 @@ class ReversiAgent(abc.ABC):
     @property
     def best_move(self):
         """Return move after the thinking.
-        
+
         Returns
         ------------
         move : np.array
@@ -81,9 +80,9 @@ class ReversiAgent(abc.ABC):
         try:
             # await self.search(board, valid_actions)
             p = Process(
-                target=self.search, 
+                target=self.search,
                 args=(
-                    self._color, board, valid_actions, 
+                    self._color, board, valid_actions,
                     output_move_row, output_move_column))
             p.start()
             while p.is_alive():
@@ -103,11 +102,11 @@ class ReversiAgent(abc.ABC):
 
     @abc.abstractmethod
     def search(
-            self, color, board, valid_actions, 
+            self, color, board, valid_actions,
             output_move_row, output_move_column):
         """
         Set the intended move to self._move.
-        
+
         The intended move is a np.array([r, c]) where r is the row index
         and c is the column index on the board. [r, c] must be one of the
         valid_actions, otherwise the game will skip your turn.
@@ -132,9 +131,9 @@ class ReversiAgent(abc.ABC):
 
 class RandomAgent(ReversiAgent):
     """An agent that move randomly."""
-    
+
     def search(
-            self, color, board, valid_actions, 
+            self, color, board, valid_actions,
             output_move_row, output_move_column):
         """Set the intended move to the value of output_moves."""
         # If you want to "simulate a move", you can call the following function:
@@ -145,7 +144,7 @@ class RandomAgent(ReversiAgent):
         try:
             # while True:
             #     pass
-            # time.sleep()
+            #time.sleep(3)
             randidx = random.randint(0, len(valid_actions) - 1)
             random_action = valid_actions[randidx]
             output_move_row.value = random_action[0]
@@ -155,67 +154,62 @@ class RandomAgent(ReversiAgent):
             print('search() Traceback (most recent call last): ')
             traceback.print_tb(e.__traceback__)
 
+
 class BestAgent(ReversiAgent):
 
     def search(self, color, board, valid_actions, output_move_row, output_move_column):
         # time.sleep(3)
-        move = self.minimax(board, _MAX_DEPTH, -np.inf, np.inf, self.player)
-        print('fou', move)
+
+        move = self.minimax(board, _MAX_DEPTH, -np.inf, np.inf, self.player, color)
         output_move_row.value = move[0]
         output_move_column.value = move[1]
 
-
-
-
-    def evaluate(self, state):
+    def evaluate(self, state, color):
         # print('test',state)
         score = 0
         occur = 0
 
+
+
         for i in range(len(state)):
             for j in range(len(state[i])):
-                if state[i][j] == -1:
+                if state[i][j] == color:
                     # simple case
                     score += 1
-
                     # corner case
-                    if (0,0) == (i,j) or (0,7) == (i,j) or (i,j) or (7,0) == (i,j) or (7,7) == (i,j):
+                    if (0, 0) == (i, j) or (0, 7) == (i, j) or (i, j) or (7, 0) == (i, j) or (7, 7) == (i, j):
                         score += 10
-                    elif (0,2) == (i,j) or (0, 5) == (i,j) or (5,0) == (i,j) or (5,5) == (i,j):
+                    elif (0, 2) == (i, j) or (0, 5) == (i, j) or (5, 0) == (i, j) or (5, 5) == (i, j):
                         score += 5
-                elif state[i][j] == 1:
+                elif state[i][j] == color*-1:
                     # simple case
                     score -= 1
 
                     # corner case
-                    if (0,0) == (i,j) or (0,7) == (i,j) or (i,j) or (7,0) == (i,j) or (7,7) == (i,j):
+                    if (0, 0) == (i, j) or (0, 7) == (i, j) or (i, j) or (7, 0) == (i, j) or (7, 7) == (i, j):
                         score -= 10
                     elif (0, 2) == (i, j) or (0, 5) == (i, j) or (5, 0) == (i, j) or (5, 5) == (i, j):
                         score -= 5
 
         return score
 
-    def minimax(self, state,  depth, alpha, beta, player):
+    def minimax(self, state,  depth, alpha, beta, player, color):
 
         valids = _ENV.get_valid((state, self.player))
         valids = np.array(list(zip(*valids.nonzero())))
         if depth == 0:
-            return [0, 0] ,-1, self.evaluate(state) - depth
+            return [0, 0], -1, self.evaluate(state,color) - depth
 
         if player == self.player:
             best_score = -1, -np.inf
         else:
             best_score = -1, np.inf
 
-
         the_move = np.array([0, 0])
         for move in valids:
-
-
-
             board, turn = _ENV.get_next_state((state, player), move)
 
-            val = self.minimax(board, depth - 1, alpha, beta, turn)
+            val = self.minimax(board, depth - 1, alpha, beta, turn, color)
 
             if turn == self.player:
 
@@ -239,6 +233,3 @@ class BestAgent(ReversiAgent):
             return the_move
         else:
             return best_score
-
-
-

@@ -75,7 +75,7 @@ async def main(black, white, timelimit=2):
                 print(f'Timeout! Overtime: {d:.2}')
                 break
             move = active_player.best_move
-        #clear_screen()
+        clear_screen()
         prev_turn = turn
         board, turn = env.get_next_state((board, turn), move)
         render(board, turn, move, prev_turn)
@@ -94,5 +94,6 @@ async def main(black, white, timelimit=2):
 if __name__ == "__main__":
     black = agents.RandomAgent(bg2.BLACK)
     #white = agents.RandomAgent(bg2.WHITE)
+    #black = agents.BestAgent(bg2.BLACK)
     white = agents.BestAgent(bg2.WHITE)
     asyncio.run(main(black, white, 10))
