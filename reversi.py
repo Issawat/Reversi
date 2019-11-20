@@ -75,7 +75,7 @@ async def main(black, white, timelimit=2):
                 print(f'Timeout! Overtime: {d:.2}')
                 break
             move = active_player.best_move
-        clear_screen()
+        #clear_screen()
         prev_turn = turn
         board, turn = env.get_next_state((board, turn), move)
         render(board, turn, move, prev_turn)

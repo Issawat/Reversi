@@ -19,7 +19,7 @@ np.inf
 
 _ENV = gym.make('Reversi-v0')
 _ENV.reset()
-_MAX_DEPTH = 4
+_MAX_DEPTH = 5
 
 def transition(board, player, action):
     """Return a new board if the action is valid, otherwise None."""
@@ -169,27 +169,27 @@ class BestAgent(ReversiAgent):
         score = 0
         occur = 0
 
+        region_2 = [(1,2),(1,3),(1,4),(1,5),(6,2),(6,3),(6,4),(6,5),(2,1),(3,1),(4,1),(5,1),(2,6),(3,6),(4,6),(5,6)]
+        region_3 = [(2,0),(3,0),(4,0),(5,0),(0,2),(0,3),(0,4),(0,5),(2,7),(3,7),(4,7),(5,7),(7,2),(7,3),(7,4),(7,5)]
+        region_4 = [(0,1),(1,1),(1,0),(0,6),(1,6),(1,7),(6,0),(6,1),(7,1),(6,6),(6,7),(7,6)]
+        region_5 = [(0,0),(0,7),(7,0),(7,7)]
 
 
         for i in range(len(state)):
             for j in range(len(state[i])):
                 if state[i][j] == color:
-                    # simple case
-                    score += 1
-                    # corner case
-                    if (0, 0) == (i, j) or (0, 7) == (i, j) or (i, j) or (7, 0) == (i, j) or (7, 7) == (i, j):
+                    if (i,j) in region_5:
                         score += 10
-                    elif (0, 2) == (i, j) or (0, 5) == (i, j) or (5, 0) == (i, j) or (5, 5) == (i, j):
+                    elif (i,j) in region_3:
                         score += 5
-                elif state[i][j] == color*-1:
-                    # simple case
-                    score -= 1
+                    else : score += 1
 
-                    # corner case
-                    if (0, 0) == (i, j) or (0, 7) == (i, j) or (i, j) or (7, 0) == (i, j) or (7, 7) == (i, j):
-                        score -= 10
-                    elif (0, 2) == (i, j) or (0, 5) == (i, j) or (5, 0) == (i, j) or (5, 5) == (i, j):
-                        score -= 5
+                elif state[i][j] == color*-1:
+                    if (i,j) in region_2:
+                        score += 5
+                    elif (i,j) in region_4:
+                        score += 10
+                    else : score -= 1
 
         return score
 
