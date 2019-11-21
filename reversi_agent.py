@@ -182,13 +182,28 @@ class BestAgent(ReversiAgent):
                         score += 10
                     elif (i,j) in region_3:
                         score += 5
+                    # new eval on decreasing score 1
+                    if (i,j) in region_2:
+                        score -= 5
+                    elif (i,j) in region_4:
+                        score -= 10
+                    # ==============================
+                    
                     else : score += 1
+
 
                 elif state[i][j] == color*-1:
                     if (i,j) in region_2:
                         score += 5
                     elif (i,j) in region_4:
                         score += 10
+                    # new eval on decreasing score 1
+                    if (i,j) in region_5:
+                        score -= 10
+                    elif (i,j) in region_3:
+                        score -= 5
+                    # ==============================
+                    
                     else : score -= 1
 
         return score
